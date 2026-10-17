@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Blaze-Grid
 
-## Getting Started
+Offline-first campus payments + peer credit on Ecobank rails. InnovateX 2026, Track A.
+Full plan: [`docs/BLAZE_GRID_BUILD_PLAN.md`](docs/BLAZE_GRID_BUILD_PLAN.md) · Pitch summary: [`docs/ECOBANK_BLAZE_GRID_BLUEPRINT.md`](docs/ECOBANK_BLAZE_GRID_BLUEPRINT.md).
 
-First, run the development server:
+## Run
 
 ```bash
+npm install
+cp .env.example .env.local      # fill Supabase keys
+node scripts/gen-bank-key.mjs   # paste output into .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm test                        # relay protocol + attack tests
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Offline behaviour (service worker) only runs in a production build: `npm run build && npm start`.
+Camera scanning needs HTTPS on phones — test on the Vercel deploy, not `localhost`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Try the payment loop (Day 2)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Two phones, or two browser tabs:
 
-## Learn More
+1. **Tab A:** pick **$wali**, then **Top up Pocket** (₦2,000). This needs a connection.
+2. **Tab B:** go to `/merchant`, pick **Mama Tee's Kitchen**, type an amount, and tap **Charge**.
+3. Tick **Simulate no data** on Tab A's home screen. It applies to both tabs, so you don't need airplane mode.
+4. **Tab A:** **Scan to Pay**, enter PIN `1234`, and the voucher QR appears.
+5. **Tab B:** **Customer is offline → scan their code**. You should see ✓ Received · Guaranteed.
+6. Untick **Simulate no data**. Within ~5 s the vendor shows **Settled ✓**.
 
-To learn more about Next.js, take a look at the following resources:
+In dev, a phone camera is optional: each scanner has a "paste code" box, and the QR element carries its payload in `data-payload`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Mock bank:** all accounts and balances live in server memory (`lib/bank/mock.ts`). They reset when the server restarts, and they **won't work on Vercel**, where each request can hit a different instance. Swap in Supabase before deploying.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database
 
-## Deploy on Vercel
+Push `supabase/migrations/0001_init.sql` with `supabase db push` (after `supabase link`),
+or paste it into the Supabase SQL editor.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Layout
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Path | What |
+|---|---|
+| `lib/relay/` | Pocket certs, voucher sign/verify, risk rules. Shared by phone and server. |
+| `lib/offline/` | Connectivity detection (Day 2: IndexedDB queue + sync) |
+| `lib/bank/adapter.ts` | `EcobankAdapter` seam — MockBank now, Ecobank sandbox later |
+| `supabase/migrations/` | Schema, `issue_pocket`, `settle_voucher`, RLS |
+| `public/sw.js` | App-shell service worker |
