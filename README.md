@@ -33,8 +33,14 @@ In dev, a phone camera is optional: each scanner has a "paste code" box, and the
 
 ## Database
 
-Push `supabase/migrations/0001_init.sql` with `supabase db push` (after `supabase link`),
-or paste it into the Supabase SQL editor.
+The app picks its bank backend with `BANK_BACKEND` in `.env.local`:
+
+- `mock` (default) — in-memory `MockBank`, no setup needed.
+- `supabase` — Postgres. Push both migrations with `supabase db push` (after `supabase link`),
+  or paste `supabase/migrations/0001_init.sql` + `0002_supabase_bank.sql` into the SQL editor,
+  then seed the six demo users: `node scripts/seed.mjs`.
+
+Full design: [`docs/DATABASE_PLAN.md`](docs/DATABASE_PLAN.md).
 
 ## Layout
 

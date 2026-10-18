@@ -1,17 +1,12 @@
-import type { EcobankAdapter } from "./adapter";
+import type { DemoUser, EcobankAdapter, RelayEvent, SettleState } from "./adapter";
 
 // In-memory stand-in for Ecobank + Supabase. Mirrors supabase/migrations/0001_init.sql so the
 // swap is mechanical. State lives on globalThis (survives dev hot-reload, NOT a server restart,
 // and NOT serverless instances on Vercel — use Supabase for the deployed demo).
 
-export interface DemoUser {
-  id: string;
-  tag: string;
-  name: string;
-  isMerchant: boolean;
-}
-
-export type SettleState = "SETTLED_CONFIRMED" | "PENDING" | "REJECTED";
+// Re-exported so existing imports (lib/client/wallet.ts) keep working; the types now live on the
+// shared bank seam in lib/bank/adapter.ts.
+export type { DemoUser, RelayEvent, SettleState } from "./adapter";
 
 interface Account {
   balance: number;
@@ -39,14 +34,6 @@ interface Payment {
   state: "SETTLED_CONFIRMED";
   fraud?: "double_spend" | "overspend";
   at: number;
-}
-
-export interface RelayEvent {
-  id: number;
-  at: number;
-  outcome: string; // SETTLED_CONFIRMED | PENDING | a RejectReason | pocket_issued ...
-  amount?: number;
-  detail?: string;
 }
 
 const SEED: (DemoUser & { balance: number })[] = [
